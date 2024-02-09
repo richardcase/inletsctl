@@ -19,8 +19,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const inletsProDefaultVersion = "0.9.25"
-const inletsProControlPort = 8123
+const (
+	inletsProDefaultVersion = "0.9.25"
+	inletsProControlPort    = 8123
+
+	nameFlag = "name"
+)
 
 func init() {
 
@@ -30,6 +34,7 @@ func init() {
 	createCmd.Flags().StringP("region", "r", "lon1", "The region for your cloud provider")
 	createCmd.Flags().StringP("plan", "s", "", "The plan or size for your cloud instance")
 	createCmd.Flags().StringP("zone", "z", "us-central1-a", "The zone for the exit-server (gce)")
+	createCmd.Flags().String("name", "", "The name of the host. If not specified a random name will be used")
 
 	createCmd.Flags().StringP("inlets-token", "t", "", "The auth token for the inlets server on your new exit-server, leave blank to auto-generate")
 	createCmd.Flags().StringP("access-token", "a", "", "The access token for your cloud")
@@ -301,7 +306,13 @@ func runCreate(cmd *cobra.Command, _ []string) error {
 		tcp = false
 	}
 
-	name := strings.Replace(names.GetRandomName(10), "_", "-", -1)
+	name, err := cmd.Flags().GetString(nameFlag)
+	if err != nil {
+		return fmt.Errorf("failed to get '%s' value: %w", nameFlag, err)
+	}
+	if name == "" {
+		name = strings.Replace(names.GetRandomName(10), "_", "-", -1)
+	}
 
 	var userData string
 	if len(letsencryptDomains) > 0 {
